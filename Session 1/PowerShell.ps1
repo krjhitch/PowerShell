@@ -16,6 +16,7 @@
     $PsVersionTable                  #This is a default variable that tells you the PowerShell version you are running
     $PsVersionTable.gettype()        #Shows that $PSVersionTable is a Hashtable variable
     Get-Variable                     #How do you know what variables are currently in memory? Get-Variable
+    Remove-Variable             
     Get-Help Get-Variable -examples  #How can you explore ways to use Get-Variable? Get-Help
     Get-Command *variable*           #What other PowerShell commands deal with variables? Get-Command shows us
 
@@ -127,33 +128,76 @@
         #Write-Host ONLY displays to the user.  It does NOT put anything on the pipeline.  It cannot interact with variables.  It's output cannot be directed into other commands.
         #Write-Host is good for showing messages only
 
+        #Split
+        'www.microsoft.com'
+        'www.microsoft.com'.split('.')
+        'CN=Keith,OU=People,OU=Region,DC=domain,DC=local'.split(',')
+
     #Basic hashtable
-    
-    #Show alternate assignment techniques (empty arrays, etc)
-    #Show .gettype() and [casting] - perhaps an example with 1 + 1
-    #Show Get-Variable
-    #Show variable $(names) and show variable $scopes:etc
-    #Explain when to save a variable
-    #Remove-Variable
+    @{}
+    @{'Name' = 'Value'}
+    @{Name=Value}
+    @{
+        Name = Value
+    }
+    @{
+        Name = Value;Name2 = Value2
+    }
+    @{
+        Name = Value
+        Name2 = Value2
+    }
+    $hashTable = @{
+        FirstName = 'Keith'
+        LastName = 'Hitchcock'
+    }
+    $hashTable.FirstName
+    "My name is $hashTable.FirstName $hashTable.SecondName"
+    "My name is $($hashTable.FirstName) $($hashTable.LastName)"
 
+    1..10
+    (1..10).gettype()
+    $savedArray = 1..10
+    $newHashTable = @{
+        'Title' = 'This is my HashTable'
+        'List' = $savedArray
+    }
+    $newHashTable.Title
+    $newHashTable.List
 
-
-#Array Manipulation
-    #-Join, -Split
-    #$a + $a vs $a += 'x'
 
 #Moving around the filesystem
     #Fixed path
     cd c:\windows\temp
-    #Relative path
-    #Relative path madness
-    #Other 'Drives' like hklm: cert:
-    #.\sourcing
+    Get-Command cd
+    Set-Location C:\windows\Temp
+    Set-Location \
+    Set-Location C:\Windows\Temp
+    Set-Location .
+    Set-Location ..
+    Set-Location ..\System32
+    Set-Location ..\Temp\..\System32..\Temp\..System32..\..\
+
+    Get-PSDrive
+    Set-Location Cert:
+    dir
+    Get-Command dir
+    Get-ChildItem
+    cd CurrentUser
+    cd my
+    Get-ChildItem
 
 #Cmdlet discovery and use
     #Discover cmdlets with Get-Command
-    #Discover aliases with Get-Alias
-    #Get-Help and command add-on
+    Get-Command *Firewall*
+    #ISE Command Add-on
+    Get-Help Get-NetFirewallRule
+    #Example 2 - Get-NetFirewallProfile -Name Public | Get-NetFirewallRule
+
+    
+    Get-Command cp
+    Get-Command Copy-Item
+
     #Copy-Item explain -verbose
     #Out-Variable
 
@@ -183,6 +227,8 @@
     # | Out-CSV
     # | OGV
     # | Clip
+
+#Show getting data out of IPConfig
 
 #Extras - if we get time
     #ScriptBlock as Variable
