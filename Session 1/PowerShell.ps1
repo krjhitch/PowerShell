@@ -20,8 +20,6 @@
     Get-Help Get-Variable -examples  #How can you explore ways to use Get-Variable? Get-Help
     Get-Command *variable*           #What other PowerShell commands deal with variables? Get-Command shows us
 
-
-
 #Show to do variables
     #Discover what type of variable I have
                    $testVariable = dir c:\windows\temp #Variable = Command
@@ -59,7 +57,8 @@
         "Hi my name is $variableName"              #Results - Hi my name is Keith
         "$variableName: please use PowerShell"     #Oops! Doesn't work because variable names can have : and PowerShell here thinks that the : is part of the variable and not the string (cannot find variable)
         "$($variableName): please use PowerShell"  #Wrapping our variable in $( ) makes it work since ( ) in PowerShell means 'do this first'.  The $ is required inside of a string so PowerShell understand you didn't literally mean 'put two parenthesis in my string'
-        
+        "$variableName`: please use PowerShell"    #I can also 'escape' the : by using the PowerShell escape character which is ` (the backtick)
+
         #Why is this useful?
         "My PowerShell Version is $PSVersionTable"              #Oops! Doeesn't work because $PSVersionTable is a Hashtable and too complicated ot automatically turn into a string
         $PSVersionTable.ToString()                              #All objects have a .ToString() method.  It shows us the object doesn't convert to a string well
@@ -129,36 +128,45 @@
         #Write-Host is good for showing messages only
 
         #Split
-        'www.microsoft.com'
-        'www.microsoft.com'.split('.')
-        'CN=Keith,OU=People,OU=Region,DC=domain,DC=local'.split(',')
+        'www.microsoft.com'                                              #Single [String]
+        'www.microsoft.com'.split('.')                                   #Single [String] using the .split command (which also takes in a string) - the delimiter is .   Result is that you get an array with 3 elements
+        'CN=Keith,OU=People,OU=Region,DC=domain,DC=local'.split(',')     #A practical (more common) string that you might see
+        'CN=Keith,OU=People,OU=Region,DC=domain,DC=local'.split(',')[0]  #The first element, which is CN=Keith
+
+        #Replace
+        'My name is Keith Hitchcock' -replace 'Keith Hitchcock','Mr. PowerShell'
 
     #Basic hashtable
-    @{}
-    @{'Name' = 'Value'}
-    @{Name=Value}
-    @{
+    @{}                                 #The basic syntax for an empty hashtable
+    @{'Key' = 'Value or Variable'}      #The basic syntax for a hashtable with 1 Key/Value
+    @{Name=Value}                       #Another valid syntax for a hashtable, the Key/Value is assumed to be strings
+
+    @{                                  #Common multi-line formatting for hashtables
         Name = Value
     }
-    @{
+
+    @{                                  #A hashtable with 2 keys.  Hashtables keys can be seperated by either ; or a new line
         Name = Value;Name2 = Value2
     }
-    @{
+
+    @{                                  #Another hashtable with 2 keys.  These are seperated with a new line
         Name = Value
         Name2 = Value2
     }
-    $hashTable = @{
+
+    $hashTable = @{                      #An example of a real hashtable and why it might be useful.  Instead of [0] and [1], I can say $variable.FirstName and $variable.LastName to get my values
         FirstName = 'Keith'
         LastName = 'Hitchcock'
     }
-    $hashTable.FirstName
+    $hashTable.FirstName                
     "My name is $hashTable.FirstName $hashTable.SecondName"
     "My name is $($hashTable.FirstName) $($hashTable.LastName)"
 
-    1..10
+    1..10                                #The .. in PowerShell represents a series.  It is the same as typing 1,2,3,4,5,6,7,8,9,10
     (1..10).gettype()
     $savedArray = 1..10
-    $newHashTable = @{
+
+    $newHashTable = @{                   #This hashtable has one key (Title) with a string value and one key (List) with an array as the value
         'Title' = 'This is my HashTable'
         'List' = $savedArray
     }
@@ -168,24 +176,29 @@
 
 #Moving around the filesystem
     #Fixed path
-    cd c:\windows\temp
-    Get-Command cd
-    Set-Location C:\windows\Temp
-    Set-Location \
-    Set-Location C:\Windows\Temp
-    Set-Location .
-    Set-Location ..
-    Set-Location ..\System32
-    Set-Location ..\Temp\..\System32..\Temp\..System32..\..\
+    pwd                                  #PWD shows your current location on a drive
+    Get-Command pwd                      #Turns out, pwd is actually an alias for the Get-Location cmdlet
+    Get-Location                         #Get-Location also shows your current location on a drive
+    cd c:\windows\temp                   #cd (Change Directory) changes the current location to c:\windows\temp
+    Get-Command cd                       #Get-Command shows us that cd is really an alias for the Set-Location cmdlet
+    Set-Location C:\windows\Temp         #Set-Location changes our directory to c:\windows\temp
+    Set-Location \                       #In filesystems, \ represents the root of the current drive.  So if you're anywhere on C: you'll go back to C:\, if you're on D: anywhere you'll go back to D:\
+    Set-Location C:\Windows\Temp         
 
-    Get-PSDrive
-    Set-Location Cert:
-    dir
-    Get-Command dir
-    Get-ChildItem
-    cd CurrentUser
-    cd my
-    Get-ChildItem
+    #Relative Path
+    Set-Location .                             #. is the current directory.  This command (doesn't do much) moves you to the directory you're already in
+    Set-Location ..                            #.. is the current parent directory.  This command moves you one directory back on the drive (the parent folder)
+    Set-Location .\System32                    #.\System32 means- In the current folder (.) there should be a subfolder named System32 (and move to it)
+    Set-Location ..\Temp\..\System32\..\Temp   #This one gets complicated (but it works)
+
+    Get-PSDrive                           #Shows some of the great PSDrives that you can use.  Cert, HKLM, and WSMAN are great ones 
+    Set-Location Cert:                    #An example of moving the current working directory to the CERT: PSDRIVE
+    dir                                   #Dir (which is an alias for the Get-ChildItem cmdlet) shows us the certs/folders that are in the CERT: drive
+    Get-Command dir                       #alias for the Get-ChildItem cmdlet)
+    Get-ChildItem                         #shows us the certs/folders that are in the CERT: drive    
+    cd CurrentUser                        #cd (Set-Location) to the CurrentUser folder
+    cd my                                 #cd (Set-Location) to the My folder
+    Get-ChildItem                         #These are the PowerShell objects that represent the current user's certificates
 
 #Cmdlet discovery and use
     #Discover cmdlets with Get-Command
@@ -194,43 +207,135 @@
     Get-Help Get-NetFirewallRule
     #Example 2 - Get-NetFirewallProfile -Name Public | Get-NetFirewallRule
 
+    Get-Command cp                                                       #cp is the alias for the Copy-Item Cmdlet
+    Copy-Item 'WER935.tmp.txt' 'WER935.txt'                              #Copy-Item works, the source and the destination both work
+    Get-Command del                                                      #del is the alias for the Remove-Item cmdlet
+    Remove-Item 'WER935.txt'                                             #Remove-Item also works (no surprises there)
+    Copy-Item 'WER935.tmp.txt' 'WER935.txt' -Verbose                     #Most cmdlets have the -Verbose switch parameter, which means that it will show what it is doing
+    Get-Help Copy-Item -Full                                             #How do you use the Copy-Item cmdlet? How is Copy-Item <source> <destination> working? How can we be more explicit?
+                                                                         #Look for Parameter Position 0 (-Path) and Parameter Position 1 (-Destination)
+    Copy-Item -Path 'WER935.tmp.txt' -Destination 'WER935.txt' -Verbose  #Command does the exact same thing, but now it's easier to read
     
-    Get-Command cp
-    Get-Command Copy-Item
-
-    #Copy-Item explain -verbose
-    #Out-Variable
+    Get-Item -Path 'WER935.txt'                                          #Get-Item (from current directory, since no full path was specified)
+    $fileObject = Get-Item -Path 'WER935.txt'                            #Get-Item but save it to a variable (notice that the console output disappeared)
+    Get-Variable 'saved'                                                 #No such variable
+    Get-Item -Path 'WER935.txt' -OutVariable saved                       #the -OutVariable parameter saves the output to a variable, but it's also displayed to the screen
+    $saved                                                               #Proof that the $saved variable was create and has an object in it
 
 #Objects as variables
-    #Assigning and using/reusing objects
-    #Cmdlets for pipeline vs saved to a variable
-    #Looiking at objects | 
+    $fileObject = Get-Item -Path 'WER935.txt'                           #Get a file object and save it to a variable
+    $fileObject                                                         #Proof that the object is saved
+    $fileObject | Format-List                                           #When we pipe an object to Format-List it shows us more properties of the object than just calling the object
+    $fileObject | Format-List *                                         #Format-List * shows us yet more properties
+    $fileObject | Format-List * -Force
+    $fileObject | Get-Member 
+    $fileObject
+    $fileObject.Name
+    $fileObject.BaseName
+    $fileObject.Extension
+    $fileObject.FullName
+    $fileObject | Get-Member 
+    "This is a string that represents $fileObject"
+    "This is a string that represents $PSVersionTable"
+    $fileObject.ToString()
+    $PSVersionTable.ToString()
+    
+    $PSVersionTable.GetType()
+    $PSVersionTable 
+    $PSVersionTable.PSVersion.ToString()
 
 #Control Structure
-    #Order of operations ( ) code to evaluate
+    # ( ) Order of Operations
+    $fileObject = Get-Item -Path 'WER935.txt'
+    $fileObject.Extension
+
+    (Get-Item -Path 'WER935.txt').Extension
+
+    # () Order of Operations in a string
+    "The file extension is $((Get-Item -Path 'WER935.txt').Extension)"
     #if
+    if ($true) {
+        Write-Host '$true is always True!'
+    }
+
+    if (-not $true) {
+        Write-Host 'You should never see this'
+    }
+
+    if (1 -eq 1) {
+        Write-Host 'True!'
+    }
+
+    $true.gettype()
+    $false.gettype()
     #ForEach vs Pipeline
-    #Pipeline me some files    
-    #$_ and $? and $LASTEXITCODE
+    $list = 1..20
+    $list
+
+    ForEach ($item in $list) {
+        Write-Host $item
+    }
+
+    $list | ForEach-Object {
+        Write-Host $_
+    }
+
+   #$LASTEXITCODE IS FOR EXEs, $? is for PowerShell
+   Get-Variable $LASTEXITCODE
+   ipconfig.exe
+   $LASTEXITCODE
+   ipconfig.exe /fakeswitch
+   $LASTEXITCODE
+
+   Get-Process 
+   $?
+   Get-Process -Name 'fakeprocess'
+   $?
+   $?
 
 #Pipeline passing of objects and outputs
-    #hwat is the pipeline?
-    #What is an object?
+    #What is the pipeline?
     #Why are objects better than text?
-    #How do I look at my object?
-    # | Get-Member
-    # | Format-Table
-    # | Format-List
-    #.gettype() again
-    #.toString()
+    (Get-ChildItem -Path C:\Windows\Temp).Extension
+    Get-ChildItem | Out-GridView #ISE Only
+    ipconfig.exe
+    $result = ipconfig.exe
+    $result | Get-Member
+    (ipconfig.exe) -match "IP"
+    $result = (ipconfig.exe) -match "IP"
+
+    $result | ForEach-Object {
+        $_.split(':')
+    }
+
+    $result | ForEach-Object {
+        $_.split(':')[1]
+    }
+
+    $ipaddresses = $result | ForEach-Object {
+        $_.split(':')[1]
+    }
+
+    $result | ForEach-Object {
+        $_.split(':')[1]
+    } | Clip
+
+    $result | ForEach-Object {
+        $_.split(':')[1]
+    } | Out-File -FilePath .\ipaddresses.txt
+
+
     # | Out-File
     # | Out-CSV
-    # | OGV
-    # | Clip
+    Get-ChildItem C:\Windows\Temp
+    $files = Get-ChildItem C:\Windows\Temp
+    $files | Out-GridView
+    $files | Out-File -Path c:\temp.txt
+    psedit c:\temp.txt
+    $files | Out-CSV -Path c:\tempcsv.csv
+    psedit c:\tempcsv.csv
 
-#Show getting data out of IPConfig
-
-#Extras - if we get time
+#Extras
     #ScriptBlock as Variable
     $scriptblock = {Write-Host 'Yay'}
     $scriptblock.Invoke()
