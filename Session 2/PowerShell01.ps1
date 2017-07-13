@@ -14,7 +14,7 @@ Get-Variable                                                                    
 $Profile                                                                        #$Profile is a location where when you launch PowerShell it will look for that file and execute it
 
 New-Item -ItemType File -Path $Profile -Value "Write-Host 'PowerShell Loaded'"  #Creates a file at $Profile (Path) which runs every time PowerShell is loaded
-Invoke-Expression $Profile                                                      #Invoke-Expression is a cmdlet that executes a string
+Invoke-Expression (Get-Content $Profile | Out-String)                                                      #Invoke-Expression is a cmdlet that executes a string
 
 Get-PSDrive                                                                     #(Notice that there is a Function: drive)
 Dir Function:*                                                                  #Get-ChildItem Function:*
@@ -35,17 +35,19 @@ function HoursAgo {                                                             
 HoursAgo 1                                                                      #1 hour ago
 HoursAgo 2                                                                      #2 hours ago
 HoursAgo 0                                                                      #0 hours ago (now)
+HoursAgo 'Keith'
 
 #-------------------------------------------                                    #Same function as above, but with a named Parameter                    
 function HoursAgo {                                                             #Define function - load into memory
     param($HoursInThePast)                                                      #param( ) block is for defining the parameters (names, types, constraints, positions)
-
+    
     (Get-Date).AddHours(0 - $HoursInThePast)                                    #Same logic as above function
 }
 HoursAgo 0                                                                      #PowerShell knows where to put this because the first defined parameter is automatically position 0
 HoursAgo -HoursInThePast 1                                                      #PowerShell function can now do IntelliSense and auto-complete 
 HoursAgo -HoursInThePast 10
 HoursAgo -HoursInThePast 72
+HoursAgo -HoursInThePast 'Keith'
 
 #-------------------------------------------
 function HoursAgo ($HoursInThePast) {                                           #Same as above function but param block is missing.
@@ -159,6 +161,7 @@ Copy-Item -Path .\README.md -Destination .\README2.md                           
 Copy-Item -Path .\README.md -Destination .\README2.md -Verbose                  #Adding the -Verbose switch shows me what the function is doing
 
 #-------------------------------------------
+Write-Host 'This is great'
 Write-Verbose "This is a verbose message"                                       #Why doesn't this work? (Checks $VerbosePreference)
 
 function SquareNumber {                                                         #Same function as before
@@ -172,6 +175,7 @@ SquareNumber -number 1                                                          
 SquareNumber -number 2
 SquareNumber -number 3
 SquareNumber -number 10 -Verbose                                                #Now we can see the guts when we want to
+$answer = SquareNumber -number 10 -Verbose
 
 #-------------------------------------------
 function SquareNumber {
@@ -179,7 +183,7 @@ function SquareNumber {
     param([Int]$number)
     
     Write-Verbose "Function is multiplying $number by $number"
-    $number*$number                                                             #Notice that the return line is removed.  The last line gets returned
+    $answer = $number*$number                                                           #Notice that the return line is removed.  The last line gets returned
 }
 SquareNumber -number 1
 SquareNumber -number 2
@@ -266,5 +270,5 @@ DisplayParameters
 DisplayParameters -Number 1
 DisplayParameters -Number 1 -String 'Keith'
 
-
+#Go look for PowerShell ParameterSets
 
