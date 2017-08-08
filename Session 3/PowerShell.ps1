@@ -76,10 +76,6 @@ Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
 }
 #>
 
-
-Get-WmiObject -Class Win32_OperatingSystem
-Get-WmiObject -Class Win32_OperatingSystem -ComputerName $Computers.Name
-
 $Computers
 $Computers.Name
 $Computers.Name[0,2]
@@ -91,14 +87,65 @@ Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
     Get-ComputerInfo
 } | Select PSComputerName, OSName, OSBuildNumber, OSUptime
 
-# Remote Shutdown
- ## Command
- ## PowerShell
- ## Modify Firewall
+Get-Command *new*user*
+Get-Command New-LocalUser -ShowCommandInfo
 
-# PowerShell Remoting
- ## Building Credentials
- # Clear vs Encrypted Passwords
+New-LocalUser -Name localuser -Password 'ThisismyPassword'
+$test = 'ThisismyPassword'
+$test.GetType()
+$test = ConvertTo-SecureString -String 'ThisismyPassword' -AsPlainText -Force
+$test.GetType()
+
+New-LocalUser -Name localuser -Password $test
+
+$Password = ConvertTo-SecureString -String 'ComplexPassword123!' -AsPlainText -Force
+New-LocalUser -Name localuser -Password $Password -Description 'Local user for Testing'
+Get-LocalUser
+
+Enter-PSSession -ComputerName $Computers.Name[2]
+ Get-LocalUser
+ $Password = ConvertTo-SecureString -String 'ComplexPassword123!' -AsPlainText -Force
+ New-LocalUser -Name localuser -Password $Password -Description "Local user on $($Computers.Name[2]) Testing"
+ Get-LocalUser
+Exit-PSSession
+
+$Credentials = Get-Credential
+$Credentials.GetType()
+
+Hostname
+Invoke-Command -ComputerName $Computers.Name[2] -ScriptBlock {
+    hostname
+    whoami
+}
+
+Invoke-Command -ComputerName $Computers.Name[2] -Credential $Credentials -ScriptBlock {
+    hostname
+    whoami
+}
+
+New-ADUser -Name serviceaccount -AccountPassword $Password -Enabled $true
+$Credentials = Get-Credential
+
+Invoke-Command -ComputerName $Computers.Name[2] -Credential $Credentials -ScriptBlock {
+    hostname
+    whoami
+}
+
+Invoke-Command -ComputerName $Computers.Name[2] -ScriptBlock {
+    Add-LocalGroupMember -Group 'Administrators' -Member 'Domain\serviceaccount'
+}
+
+Invoke-Command -ComputerName $Computers.Name[2] -Credential $Credentials -ScriptBlock {
+    hostname
+    whoami
+}
+
+$Credentials
+$Credentials.UserName
+$Credentials.Password
+
+$Credentials.GetNetworkCredential() | Format-List
+
  # Enable PS-Remoting
  # Get Password Back for Script
  # WSMAN File for Remote Machines
