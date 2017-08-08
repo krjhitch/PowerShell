@@ -146,29 +146,47 @@ $Credentials.Password
 
 $Credentials.GetNetworkCredential() | Format-List
 
- # Enable PS-Remoting
- # Get Password Back for Script
+Enter-PSSession -ComputerName $Computers.Name[2]             #Line1     Run Line 1 - 3 one at a time, notice how you'll get the remote system as your result
+ hostname                                                    #Line2   
+Exit-PSSession                                               #Line3     Run Line 1 - 3 at the same time, you'll notice it doesn't work - it never enters the session.  PSSession CANNOT be used in a script
+
+Set-Location \\$($Computers.Name[2])\C$
+Get-NetFirewallRule | Where-Object -Property DisplayName -like *file*
+Get-NetFirewallRule | Where-Object -Property DisplayName -like *file* | Select DisplayName, Enabled, Direction
+Enable-NetFirewallRule -DisplayName 'File and Printer Sharing (SMB-In)'
+
+Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
+    Enable-NetFirewallRule -DisplayName 'File and Printer Sharing (SMB-In)'
+}
+
+Set-Location -Path \\$($Computers.Name[2])\C$
+Set-Location -Path C:\
+
+Enter-PSSession -ComputerName $Computers.Name[2]
+ Set-Location -Path \\$($Computers.Name[2])\C$
+ Set-Location -Path \\random1234123\c$
+ Set-Location -Path \\random123\c$
+Exit-PSSession
+
+Set-Location -Path \\random1234123\c$
+Set-Location -Path \\random123\c$
+
+Start-Process 'https://technet.microsoft.com/en-us/library/cc772815(v=ws.10).aspx'  #Kerberos Discussions
+
+<#LABRESET
+Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
+    Disable-NetFirewallRule -DisplayName 'File and Printer Sharing (SMB-In)'
+}
+#>
+
+
+
+
  # WSMAN File for Remote Machines
- # Remotely Join the Domain
- ## Kerberos Double-Hop
+
  ## Moving Files
- ## Interactive
- ## Non-Interactive
- ## Sequential vs Threaded
  ## PS-Session / Get-History
 
 #Jobs
  #Adding/removing jobs
  #Start-Sleep
-
-
-
-
-
-
-#  Remote Administration
-#  Credential Building
-#  Kerberos Double-Hop
-#  Interactive and Non-Interactive Sessions
-#  Multi-threading Commands
-#  PowerShell Jobs
