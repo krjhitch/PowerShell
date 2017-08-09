@@ -179,14 +179,61 @@ Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
 }
 #>
 
+Invoke-Command -ComputerName $Computers.Name[2] -ScriptBlock {
+    Get-Host
+    Get-Host
+    Get-Host
+    Get-History
+}
+
+Invoke-Command -ComputerName $Computers.Name[2] -ScriptBlock {
+    Get-Host
+    Get-Host
+    Get-Host
+    Get-History
+}
+
+New-PSSession -ComputerName $Computers.Name[2] -Credential $Credentials
+$session = New-PSSession -ComputerName $Computers.Name[2] -Credential $Credentials
+
+Invoke-Command -Session $session -ScriptBlock {
+    Get-Host
+    Get-Host
+    Get-Host
+    Get-History
+}
+
+Invoke-Command -Session $session -ScriptBlock {
+    Get-Host
+    Get-Host
+    Get-Host
+    Get-History
+}
+
+Copy-Item -Path . -Destination C:\windows\temp -ToSession $session
+
+
+Get-Job
+Start-Job -ScriptBlock {Start-Sleep -Seconds 10}
+Get-Job
+
+Get-Job
+Remove-Job -Id 1
+Get-Job
+Get-Job | Remove-Job
+
+
+Start-Job -ScriptBlock {
+    Start-Sleep -Seconds 10
+    'I am done!'
+}
+Get-Job
+
+Get-Job
+Receive-Job -Name Job5
+Get-Job | Remove-Job
 
 
 
- # WSMAN File for Remote Machines
 
  ## Moving Files
- ## PS-Session / Get-History
-
-#Jobs
- #Adding/removing jobs
- #Start-Sleep
