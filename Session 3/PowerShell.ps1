@@ -7,9 +7,12 @@ Add-WindowsFeature -Name RSAT-ADDS -IncludeManagementTools                      
 
 Get-ADComputer -Filter *                                                             #List of all the computers in our domain - Great, but broad
 (Get-ADComputer -Filter *).Gettype()
+$results = Get-ADComputer -Filter * 
+$results.Name
 
+Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' 
 Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter *
-Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter * | Select Name, ObjectClass, DistinguishedName
+Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter * | Select-Object Name, ObjectClass, DistinguishedName
 
 Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter *
 $Computers = Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter *
@@ -26,6 +29,10 @@ Test-NetConnection -ComputerName $Computers.Name[2]
 $Computers.Name
 $Computers.Name | ForEach-Object {
     Test-NetConnection -ComputerName $_
+} 
+
+ForEach ($computer in ($computers.name)){
+    write-host $Computer
 }
 
 $Computers.Name | ForEach-Object {
@@ -38,7 +45,9 @@ $Computers.Name | ForEach-Object {
 
 hostname
 Get-ComputerInfo
-Get-ComputerInfo | Select OSName, OSBuildNumber, OSUptime
+Get-ComputerInfo | Select-Object OSName, OSBuildNumber, OSUptime
+
+#If 2008R2 run Enable-PSRemoting
 
 Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
     hostname
@@ -57,7 +66,7 @@ Get-Command -Name Get-*Firewall*
 Get-NetFirewallRule
 (Get-NetFirewallRule).DisplayName
 Get-NetFirewallRule
-Get-NetFirewallRule | Select DisplayName, Enabled, Direction
+Get-NetFirewallRule | Select-Object DisplayName, Enabled, Direction
 Get-NetFirewallRule | Where-Object -Property DisplayName -match 'ICMP' | Select DisplayName, Enabled, Direction
 
 Enable-NetFirewallRule -DisplayName 'File and Printer Sharing (Echo Request - ICMPv4-In)'
@@ -85,7 +94,28 @@ Restart-Computer -ComputerName $Computers.Name[0,2] -Wait -For PowerShell -Proto
 
 Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
     Get-ComputerInfo
-} | Select PSComputerName, OSName, OSBuildNumber, OSUptime
+} | Select-Object PSComputerName, OSName, OSBuildNumber, OSUptime
+
+
+
+$directoryname = 'c:\windows\temp'
+Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
+    (Get-ChildItem -Path $directoryname)[0]
+}
+
+
+
+Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
+    (Get-ChildItem -Path $using:directoryname)[0]
+}
+
+Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
+    [PSCustomObject]@{
+        Results = $PSVersionTable.PSVersion.Major
+    }
+}
+
+
 
 Get-Command *new*user*
 Get-Command New-LocalUser -ShowCommandInfo
@@ -95,6 +125,8 @@ $test = 'ThisismyPassword'
 $test.GetType()
 $test = ConvertTo-SecureString -String 'ThisismyPassword' -AsPlainText -Force
 $test.GetType()
+#Get-Credential
+
 
 New-LocalUser -Name localuser -Password $test
 
@@ -118,9 +150,13 @@ Invoke-Command -ComputerName $Computers.Name[2] -ScriptBlock {
     whoami
 }
 
-Invoke-Command -ComputerName $Computers.Name[2] -Credential $Credentials -ScriptBlock {
+Invoke-Command -ComputerName $Computers.Name[2] -Credential $Credentials -Authentication basic -ScriptBlock {
     hostname
     whoami
+}
+
+invoke-command -ComputerName $computers.name[2] -ScriptBlock {
+    Add-LocalGroupMember -Group Administrators -Member localuser
 }
 
 New-ADUser -Name serviceaccount -AccountPassword $Password -Enabled $true
@@ -146,6 +182,8 @@ $Credentials.Password
 
 $Credentials.GetNetworkCredential() | Format-List
 
+Get-Credential -Message 'This is the admin credential' -UserName 'domain\keihi'
+
 Enter-PSSession -ComputerName $Computers.Name[2]             #Line1     Run Line 1 - 3 one at a time, notice how you'll get the remote system as your result
  hostname                                                    #Line2   
 Exit-PSSession                                               #Line3     Run Line 1 - 3 at the same time, you'll notice it doesn't work - it never enters the session.  PSSession CANNOT be used in a script
@@ -156,10 +194,11 @@ Get-NetFirewallRule | Where-Object -Property DisplayName -like *file* | Select D
 Enable-NetFirewallRule -DisplayName 'File and Printer Sharing (SMB-In)'
 
 Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
-    Enable-NetFirewallRule -DisplayName 'File and Printer Sharing (SMB-In)'
+    #Enable-NetFirewallRule -DisplayName 'File and Printer Sharing (SMB-In)'
+    Get-NetFirewallRule -DisplayName 'File and Printer Sharing (SMB-In)'
 }
 
-Set-Location -Path \\$($Computers.Name[2])\C$
+Set-Location -Path \\$($Computers.Name[2])\c$
 Set-Location -Path C:\
 
 Enter-PSSession -ComputerName $Computers.Name[2]
@@ -180,37 +219,27 @@ Invoke-Command -ComputerName $Computers.Name -ScriptBlock {
 #>
 
 Invoke-Command -ComputerName $Computers.Name[2] -ScriptBlock {
-    Get-Host
-    Get-Host
-    Get-Host
-    Get-History
+    $results = 50
+    $results
 }
 
 Invoke-Command -ComputerName $Computers.Name[2] -ScriptBlock {
-    Get-Host
-    Get-Host
-    Get-Host
-    Get-History
+    $results
 }
 
 New-PSSession -ComputerName $Computers.Name[2] -Credential $Credentials
 $session = New-PSSession -ComputerName $Computers.Name[2] -Credential $Credentials
 
 Invoke-Command -Session $session -ScriptBlock {
-    Get-Host
-    Get-Host
-    Get-Host
-    Get-History
+    $results = 100
+    $results
 }
 
 Invoke-Command -Session $session -ScriptBlock {
-    Get-Host
-    Get-Host
-    Get-Host
-    Get-History
+    $results
 }
 
-Copy-Item -Path . -Destination C:\windows\temp -ToSession $session
+Copy-Item -Path .\TS_F638.tmp -Destination C:\windows\temp -ToSession $session
 
 
 Get-Job
@@ -218,7 +247,7 @@ Start-Job -ScriptBlock {Start-Sleep -Seconds 10}
 Get-Job
 
 Get-Job
-Remove-Job -Id 1
+Remove-Job -Id 118
 Get-Job
 Get-Job | Remove-Job
 
@@ -230,7 +259,7 @@ Start-Job -ScriptBlock {
 Get-Job
 
 Get-Job
-Receive-Job -Name Job5
+Receive-Job -Name Job126
 Get-Job | Remove-Job
 
 
