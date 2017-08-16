@@ -1,4 +1,18 @@
 
+Get-WMIObject -Class Win32_ServerConnection                                                      #Retrieves a list of users connected to file shares on the local system
+Get-WMIObject -Class Win32_ServerConnection | Select-Object UserName, ComputerName, ShareName    #As above, but with more formatting
+
+query.exe user
+
+Get-Service -Name APP*                                                                     #Return all services that name starts with APP
+Get-Service -Name APP* | Where-Object -Property Status -EQ Running                         #Return all services that name starts with APP and are Running
+Get-Service -Name APP* | Where-Object {($_.ServicesDependedOn).Name -contains 'CryptSvc'}  #Return all services that starts with APP and depends on the crypto service
+Get-Service -Name APP* | Select -First 1                                                   #Return the first service that starts with APP
+(Get-Service -Name APP* | Select -First 2) | Select *                                      #Show the properties of the first 2 services that start with APP
+(Get-Service -Name APP* | Select -First 2) | Select Name, ServicesDependedOn               #Show the Name and ServiceDependedOn list for the first 2 services that start with APP
+(Get-Service -Name AppIDSvc).ServicesDependedOn                                            #Retrieve the ServicesDependedOn objects
+((Get-Service -Name AppIDSvc).ServicesDependedOn).GetType()                                #Notice that the object returned is an ARRAY of SERVICECONTROLLER objects
+
 Get-ADComputer -Filter *
 
 Get-WindowsFeature -Name *tools*                                                     #Get-WindowsFeature for something, but I forget what - *tools* oughta show me enough to cover it
@@ -6,42 +20,56 @@ Get-WindowsFeature -Name *adds*                                                 
 Add-WindowsFeature -Name RSAT-ADDS -IncludeManagementTools                           #Let's add the base RSAT-ADDS module, and -IncludeManagementTools will make sure we get the sub compontants we're looking for that are snapin/PowerShell related
 
 Get-ADComputer -Filter *                                                             #List of all the computers in our domain - Great, but broad
-(Get-ADComputer -Filter *).Gettype()
-$results = Get-ADComputer -Filter * 
-$results.Name
+Get-ADComputer -Filter * | Select Name                                               #Get the list of all computers in our domain (but just the name)
+Get-ADComputer -Filter * | Select Name, DistinguishedName                            #Get the list of all computers in our domain (name, but also location)
 
-Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' 
-Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter *
-Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter * | Select-Object Name, ObjectClass, DistinguishedName
+(Get-ADComputer -Filter *).Gettype()                                                 #What type of objects are returned?
+$results = Get-ADComputer -Filter *                                                  #Save the objects returned to a variable $results
+$results.Name                                                                        #Now you can access $results (array) .properties without calling out to AD again and again
 
-Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter *
-$Computers = Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter *
-$Computers
+Get-Command -Name *AD*                                                               #What are my AD commands?
+Get-Command -Name *ADOrg*                                                            #Looking for ADOU or ADOrganizational Units or ADOUs or some OU commands in AD
+Get-ADOrganizationalUnit                                                             #Try to run it by itself but it asks for mandatory parameters
+Get-ADOrganizationalUnit -Filter *                                                   #* means no filter
+Get-ADOrganizationalUnit -Filter * | Select DistinguishedName                        #Get all the OUs but only give me the DN of each object
+Get-ADOrganizationalUnit -Filter * | Where-Object -Property Name -match 'SIO'        #Get all OUs but just give me ones that have SIO on the name
+Get-ADOrganizationalUnit -Filter * | Where-Object -Property Name -match 'SIO' | Select Name, DistinguishedName #Same as before, but format better
 
-$Computers.Name
+Get-ADUser -SearchBase '' -Filter * | Select * -First 1                              #Get all properties of first User object in specified OU
+Get-ADUser -SearchBase '' -Filter * | Select SAMAccountName, UserPrincipalName       #Get all users in specified OU but just get SAMAccountName and UPN
 
-Test-NetConnection -ComputerName
+
+Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local'                         #Get all computers in specified OU
+Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter *               #Again, needs mandatory parameter -filter
+Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter * | Select-Object Name, ObjectClass, DistinguishedName #Add formatting
+
+Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter *               #Same as before
+$Computers = Get-ADComputer -SearchBase 'CN=Computers,DC=domain,DC=local' -Filter *  #Save results
+$Computers                                                                           #Show objects (returns an array of strings)
+$Computers.Name                                                                      #Show Name property of all objects in array
+
+Test-NetConnection -ComputerName                                                     #[String from Intellisense for property means it'll only take one string
 Test-NetConnection -ComputerName $Computers.Name
 Test-NetConnection -ComputerName $Computers.Name[0]
 Test-NetConnection -ComputerName $Computers.Name[1]
 Test-NetConnection -ComputerName $Computers.Name[2]
 
-$Computers.Name
-$Computers.Name | ForEach-Object {
+$Computers.Name                                                                      #Display Array
+$Computers.Name | ForEach-Object {                                                   #For Each element in the array, test-netconnection to computer
     Test-NetConnection -ComputerName $_
 } 
 
-ForEach ($computer in ($computers.name)){
-    write-host $Computer
+ForEach ($computer in ($computers.name)){                                            #Alternate way to iterate through an array and run a command
+    write-host "THIS IS A COMPUTERNAME: $Computer"
 }
 
-$Computers.Name | ForEach-Object {
+$Computers.Name | ForEach-Object {                                                   #Format results with | Select after objects are returned
     Test-NetConnection -ComputerName $_
 } | Select ComputerName, PingSucceeded
 
 $Computers.Name | ForEach-Object {
     Test-NetConnection -ComputerName $_
-} | Out-GridView
+} | Out-GridView                                                                      
 
 hostname
 Get-ComputerInfo
