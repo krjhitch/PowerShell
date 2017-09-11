@@ -67,7 +67,7 @@ $Computers.Name | ForEach-Object {                                              
     Test-NetConnection -ComputerName $_
 } | Select ComputerName, PingSucceeded
 
-$Computers.Name | ForEach-Object {
+$Computers.Name | ForEach-Object {                                                   #Format with Out-GridView (only available in the PowerShell ISE)
     Test-NetConnection -ComputerName $_
 } | Out-GridView                                                                      
 
