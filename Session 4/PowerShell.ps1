@@ -1,4 +1,4 @@
-#Modules
+#Modules-----------------------------------------------------------------------------------------------------
 Get-ADComputer -Filter * | Select Name, DistinguishedName
 
 #Remove-WindowsFeature -Name RSAT-AD-Tools (then re-launch console)
@@ -93,6 +93,112 @@ DEMOFUNCTION
 
 
 
-#JEA
-#Do a bunch of JEA
-#JEA Filesystem Layout
+#JEA---------------------------------------------------------------------------------------------------------------------
+#JEA Consits of
+#1) Create empty module
+#2) Create PSRC (PowerShell Role Capabilities) file - defines what a user can DO in PowerShell
+#3) Create PSSC (PowerShell Session Configuration) file - defines which users get which PSRC permissions, and also
+#       defines metadata like logon scripts, runas account, name of endpoint
+
+#      C:\Program Files\WindowsPowerShell\Modules
+#                                             \JEADEMO
+#                                                    \JEADEMO.psd1   (HAS ROOTMODULE = JEADEMO.PSM1)
+#                                                    \JEADEMO.psm1   (Empty File) 
+#                                                    \RoleCapabilities
+#                                                            \HelpdeskRole.psrc
+#                                                            \SuperAdminRole.psrc
+
+#Create JEADEMO Module Folder
+Set-Location -Path 'C:\Program Files\WindowsPowerShell\Modules'
+Get-ChildItem
+New-item -ItemType Directory -Path .\JEADEMO
+
+Set-Location -Path .\JEADEMO
+Get-ChildItem
+
+#Create RoleCapabilities Folder
+New-item -ItemType Directory -Path .\RoleCapabilities
+Get-ChildItem
+
+#Create JEADEMO Module
+New-Item -ItemType File -Path .\JEADEMO.psm1
+New-ModuleManifest -RootModule .\JEADEMO.psm1 -Path .\JEADEMO.psd1 
+
+#Create Capabilities Files
+New-PSRoleCapabilityFile -Path .\RoleCapabilities\HelpdeskRole.psrc -VisibleCmdlets 'Get-WinEvent'
+New-PSRoleCapabilityFile -Path .\RoleCapabilities\SuperAdminRole.psrc -VisibleCmdlets 'Get-*'
+
+New-PSSessionConfigurationFile -Path .\JEADEMOEndPointConfigurationInformation.pssc -SessionType RestrictedRemoteServer -RoleDefinitions @{
+    'DOMAIN\JEAAdmins'    = @{RoleCapabilities = 'SuperAdminRole'}
+    'DOMAIN\HelpdeskAdmins' = @{RoleCapabilities = 'HelpdeskRole'  }
+}
+
+#Take a look at the endpoint configuration info
+PSEdit .\JEADEMOEndPointConfigurationInformation.pssc
+
+#Test the Configuration
+Test-PSSessionConfigurationFile -Path .\JEADEMOEndPointConfigurationInformation.pssc
+
+#Create Groups
+New-ADGroup -Name 'HelpdeskAdmins'-GroupScope Universal
+New-ADGroup -Name 'JEAAdmins' -GroupScope Universal
+
+#Create Users
+$CredentialObject = Get-Credential -UserName 'UsernameIrrelevent' -Message 'Password for next step'
+New-ADUser -Name 'TEST_HelpdeskAdmin' -AccountPassword $CredentialObject.Password -Enabled $true
+New-ADUser -Name 'TEST_JEAAdmin'      -AccountPassword $CredentialObject.Password -Enabled $true
+
+#Add Users to Groups
+Add-ADGroupMember -Identity 'HelpdeskAdmins' -Members 'TEST_HelpdeskAdmin'
+Add-ADGroupMember -Identity 'JEAAdmins'      -Members 'TEST_JEAAdmin'
+
+#Register the JEA Endpoint
+Register-PSSessionConfiguration -Name 'JEAEndpoint' -Path .\JEADEMOEndPointConfigurationInformation.pssc
+#Unregister-PSSessionConfiguration -Name 'JEAEndpoint'
+
+#Verify the Endpoint Exists
+Get-PSSessionConfiguration | Select Name
+
+#Verify details of the Endpoint
+Get-PSSessionConfiguration -Name JEAEndpoint | Select *
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+#Switch to Server 2
+#Find my target computer
+Get-ADComputer -Filter * | Select Name
+$computer = 'random123' 
+
+
+#Log in as current user (who is an admin on the remote system; default powershell endpoint)
+Enter-Pssession -ComputerName $computer
+    whoami.exe
+    Get-Command
+    (Get-Command).Count
+
+Exit-PSSession
+
+#Build my user credentials
+$TestHelpdeskUser = Get-Credential -UserName 'DOMAIN\TEST_HelpdeskAdmin' -Message 'Please enter password'
+$TestAdminUser    = Get-Credential -UserName 'DOMAIN\TEST_JEAAdmin'      -Message 'Please enter password'
+
+#Try to log in as these users; Access denied.  Why? Because they aren't local admins
+Enter-PSSession -ComputerName $computer -Credential $TestHelpdeskUser
+Enter-PSSession -ComputerName $computer -Credential $TestAdminUser
+
+#Try to log in as this user but user the JEAEndpoint
+Enter-PSSession -ComputerName $computer -Credential $TestHelpdeskUser -ConfigurationName JEAEndpoint
+    whoami.exe
+    Get-Command
+    (Get-Command).Count
+
+Exit-PSSession
+
+#Try to log in as this user but user the JEAEndpoint
+Enter-PSSession -ComputerName $computer -Credential $TestAdminUser -ConfigurationName JEAEndpoint
+    whoami.exe
+    Get-Command
+    (Get-Command).Count
+
+Exit-PSSession
+
+#Invoke-Script Stuff
