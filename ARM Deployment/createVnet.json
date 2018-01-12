@@ -1,0 +1,95 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vnetname": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "addressPrefix": {
+            "type": "string"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "subnetAddressPrefix": {
+            "type": "string"
+        },
+        "enableDdosProtection": {
+            "type": "string"
+        }
+    },
+    "resources": [
+        {
+            "apiVersion": "2017-08-01",
+            "name": "[parameters('vnetname')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('addressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetAddressPrefix')]"
+                        }
+                    }
+                ]
+            }
+        }
+        {
+            "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+                "name": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "publicIPAddressName": {
+                    "type": "string"
+                }
+            },
+            "resources": [
+                {
+                    "apiVersion": "2017-08-01",
+                    "name": "[parameters('name')]",
+                    "type": "Microsoft.Network/loadBalancers",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Network/publicIPAddresses/', parameters('publicIPAddressName'))]"
+                    ],
+                    "properties": {
+                        "frontendIPConfigurations": [
+                            {
+                                "name": "LoadBalancerFrontEnd",
+                                "properties": {
+                                    "publicIPAddress": {
+                                        "id": "[resourceId('WesTest', 'Microsoft.Network/publicIPAddresses', parameters('publicIPAddressName'))]"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "apiVersion": "2017-08-01",
+                    "type": "Microsoft.Network/publicIPAddresses",
+                    "name": "[parameters('publicIPAddressName')]",
+                    "location": "[parameters('location')]",
+                    "properties": {
+                        "publicIPAllocationMethod": "Dynamic",
+                        "publicIPAddressVersion": "IPv4"
+                    }
+                }
+            ]
+        }
+    ]
+}
